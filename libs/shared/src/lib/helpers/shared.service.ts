@@ -49,14 +49,15 @@ export class SharedService {
     const diffDay = Math.round(diffHour / 24);
 
     if (Math.abs(diffSec) < 60) {
-      return diffSec >= 0 ? 'just now' : 'just now';
-    } else if (Math.abs(diffMin) < 60) {
-      return diffMin > 0 ? `in ${diffMin} minutes` : `${Math.abs(diffMin)} minutes ago`;
-    } else if (Math.abs(diffHour) < 24) {
-      return diffHour > 0 ? `in ${diffHour} hours` : `${Math.abs(diffHour)} hours ago`;
-    } else {
-      return diffDay > 0 ? `in ${diffDay} days` : `${Math.abs(diffDay)} days ago`;
+      return 'just now';
     }
+    if (Math.abs(diffMin) < 60) {
+      return diffMin > 0 ? `in ${diffMin} minutes` : `${Math.abs(diffMin)} minutes ago`;
+    }
+    if (Math.abs(diffHour) < 24) {
+      return diffHour > 0 ? `in ${diffHour} hours` : `${Math.abs(diffHour)} hours ago`;
+    }
+    return diffDay > 0 ? `in ${diffDay} days` : `${Math.abs(diffDay)} days ago`;
   }
 
   /**
@@ -74,9 +75,9 @@ export class SharedService {
     }
 
     const timestamp = Date.now().toString(36);
-    const id = `${timestamp}-${randomPart}`;
+    const baseId = `${timestamp}-${randomPart}`;
 
-    return prefix ? `${prefix}_${id}` : id;
+    return prefix ? `${prefix}_${baseId}` : baseId;
   }
 
   /**

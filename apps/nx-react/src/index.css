@@ -1,0 +1,116 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Hangman Game Colors */
+  --color-success: #4CAF50;
+  --color-success-hover: #45a049;
+  --color-error: #f44336;
+  --color-error-hover: #d32f2f;
+  --color-primary: #2196F3;
+  --color-primary-hover: #1976D2;
+  --color-text: #333;
+  --color-text-light: #666;
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-warning: #ff9800;
+  --color-warning-hover: #f57c00;
+  --color-gallows: #8B4513;
+  --color-border: #333;
+  --color-bg-light: #e0e0e0;
+  --color-bg-disabled: #ccc;
+  --color-white: #ffffff;
+
+  /* Gradients */
+  --gradient-menu: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+:root.dark {
+  --color-text: #e0e0e0;
+  --color-text-light: #ccc;
+  --color-border: #e0e0e0;
+  --color-bg-light: #333;
+  --color-bg-disabled: #555;
+  --color-white: #1a1a2e;
+  --color-overlay: rgba(0, 0, 0, 0.8);
+  --gradient-menu: linear-gradient(135deg, #3a3d7c 0%, #4a2d6b 100%);
+}
+
+/* Global Reset for 100vh layout */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Game Container - Full Viewport Layout */
+.game-container {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-header {
+  flex-shrink: 0;
+}
+
+.game-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.game-controls {
+  flex-shrink: 0;
+}
+
+/* Hangman Button Utilities */
+.btn {
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-success {
+  background-color: var(--color-success);
+  color: white;
+}
+.btn-success:hover {
+  background-color: var(--color-success-hover);
+}
+
+.btn-error {
+  background-color: var(--color-error);
+  color: white;
+}
+.btn-error:hover {
+  background-color: var(--color-error-hover);
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}

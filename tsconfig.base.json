@@ -19,7 +19,8 @@
     "customConditions": ["@nx-workspace/source"],
     "baseUrl": ".",
     "paths": {
-      "@nx-shay/shared": ["libs/shared/src/index.ts"]
+      "@nx-shay/shared": ["libs/shared/src/index.ts"],
+      "@nx-shay/backend-filters": ["libs/backend/filters/src/index.ts"]
     }
   }
 }

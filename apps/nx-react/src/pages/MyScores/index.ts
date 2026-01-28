@@ -1,0 +1,1 @@
+export { MyScores } from "./MyScores";

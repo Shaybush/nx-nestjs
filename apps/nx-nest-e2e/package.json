@@ -4,7 +4,7 @@
   "private": true,
   "nx": {
     "implicitDependencies": [
-      "@nx-workspace/nx-nest"
+      "nx-nest"
     ],
     "targets": {
       "e2e": {
@@ -17,8 +17,8 @@
           "passWithNoTests": true
         },
         "dependsOn": [
-          "@nx-workspace/nx-nest:build",
-          "@nx-workspace/nx-nest:serve"
+          "nx-nest:build",
+          "nx-nest:serve"
         ]
       }
     }

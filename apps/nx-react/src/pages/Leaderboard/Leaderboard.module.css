@@ -1,0 +1,168 @@
+.container {
+  min-height: 100vh;
+  padding: 2rem;
+  background: var(--gradient-menu);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: bold;
+  color: var(--color-white);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  margin: 0;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.filterButton {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--color-white);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.filterButton.active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.loadingContainer,
+.errorContainer,
+.emptyState {
+  text-align: center;
+  padding: 3rem;
+  color: var(--color-white);
+  font-size: 1.25rem;
+}
+
+.errorMessage {
+  margin-bottom: 1rem;
+  color: var(--color-error);
+}
+
+.tableContainer {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+:global(.dark) .tableContainer {
+  background-color: rgba(26, 26, 46, 0.95);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.table th,
+.table td {
+  padding: 1rem;
+  text-align: left;
+}
+
+.table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  color: var(--color-text);
+}
+
+:global(.dark) .table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--color-text);
+}
+
+.table tbody tr:hover {
+  background-color: rgba(33, 150, 243, 0.05);
+}
+
+:global(.dark) .table tbody tr:hover {
+  background-color: rgba(33, 150, 243, 0.15);
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.rank {
+  font-weight: bold;
+  font-size: 1.1rem;
+  text-align: center;
+  width: 80px;
+}
+
+.trophy {
+  font-size: 1.5rem;
+}
+
+.username {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .title {
+    font-size: 2rem;
+    text-align: center;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+
+  .filterButton {
+    width: 100%;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
+  }
+}

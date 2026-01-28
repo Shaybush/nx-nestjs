@@ -1,0 +1,47 @@
+.container {
+  margin: 20px auto;
+  max-width: 600px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.section {
+  /* Empty - structure only */
+}
+
+.heading {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.headingCorrect {
+  color: var(--color-success);
+}
+
+.headingIncorrect {
+  color: var(--color-error);
+}
+
+.letterList {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.letter {
+  padding: 6px 12px;
+  color: var(--color-white);
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.letterCorrect {
+  background-color: var(--color-success);
+}
+
+.letterIncorrect {
+  background-color: var(--color-error);
+}

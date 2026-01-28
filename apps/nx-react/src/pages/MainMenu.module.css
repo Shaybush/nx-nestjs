@@ -1,0 +1,84 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  padding: 2rem;
+  box-sizing: border-box;
+  background: var(--gradient-menu);
+}
+
+.title {
+  font-size: 4rem;
+  font-weight: bold;
+  color: var(--color-white);
+  margin-bottom: 3rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.1em;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.buttonGroup a {
+  text-decoration: none;
+  text-align: center;
+  font-size: 1.25rem;
+  padding: 1rem 2rem;
+}
+
+.buttonGroup a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 1.5rem;
+  }
+
+  .title {
+    font-size: 3rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .buttonGroup {
+    max-width: 280px;
+  }
+
+  .buttonGroup a {
+    font-size: 1.1rem;
+    padding: 0.9rem 1.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    letter-spacing: 0.05em;
+  }
+
+  .buttonGroup {
+    max-width: 260px;
+    gap: 1rem;
+  }
+
+  .buttonGroup a {
+    font-size: 1rem;
+    padding: 0.8rem 1.5rem;
+  }
+}

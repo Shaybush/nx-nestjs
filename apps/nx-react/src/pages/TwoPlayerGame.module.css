@@ -1,0 +1,157 @@
+.container {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  box-sizing: border-box;
+  background: var(--gradient-menu);
+}
+
+.gameArea {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  width: 100%;
+  max-width: 600px;
+  overflow: hidden;
+}
+
+.loadingContainer {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  color: var(--color-white);
+  background: var(--gradient-menu);
+}
+
+.errorContainer {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: var(--gradient-menu);
+}
+
+.errorMessage {
+  color: var(--color-error);
+  font-size: 1.2rem;
+  background: var(--color-white);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+}
+
+.currentPlayerBanner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--color-white);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+:global(.dark) .currentPlayerBanner {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.currentPlayerLabel {
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+
+.currentPlayerName {
+  color: var(--color-primary);
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.endGameContainer {
+  flex-shrink: 0;
+  padding: 0.5rem 0;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  justify-content: center;
+}
+
+.checkingIndicator {
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--color-white);
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .currentPlayerBanner {
+    padding: 0.4rem 0.8rem;
+  }
+
+  .currentPlayerName {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0.25rem 0.5rem;
+  }
+
+  .currentPlayerBanner {
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .currentPlayerLabel {
+    font-size: 0.8rem;
+  }
+
+  .currentPlayerName {
+    font-size: 0.9rem;
+  }
+
+  .endGameContainer {
+    padding: 0.25rem 0;
+  }
+}
+
+/* Very small screens */
+@media (max-height: 600px) {
+  .currentPlayerBanner {
+    padding: 0.3rem 0.6rem;
+  }
+
+  .endGameContainer {
+    padding: 0.25rem 0;
+  }
+}
