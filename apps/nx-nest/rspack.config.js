@@ -2,6 +2,9 @@ const { NxAppRspackPlugin } = require('@nx/rspack/app-plugin');
 const { join } = require('path');
 
 module.exports = {
+  entry: {
+    main: join(__dirname, 'src/main.ts'),
+  },
   output: {
     path: join(__dirname, '../../dist/apps/nx-nest'),
     clean: true,
@@ -11,7 +14,45 @@ module.exports = {
       '@nx-shay/shared': join(__dirname, '../../libs/shared/src/index.ts'),
       '@nx-shay/backend-filters': join(__dirname, '../../libs/backend/filters/src/index.ts'),
     },
+    // extensions: ['.ts', '.js', '.json'],  // file extensions to resolve automatically
   },
+
+  // --- Source maps ---
+  // devtool: 'source-map',           // 'eval' | 'source-map' | 'cheap-module-source-map' | false
+
+  // --- Node.js polyfill behavior ---
+  // node: {
+  //   __dirname: false,              // don't polyfill __dirname (use real path at runtime)
+  //   __filename: false,
+  // },
+
+  // --- Build target ---
+  // target: 'node18',                // can specify node version e.g. 'node18', 'node20'
+
+  // --- Persistent build cache ---
+  // cache: true,                     // or { type: 'filesystem' } for disk-based cache
+
+  // --- Watch options ---
+  // watchOptions: {
+  //   ignored: /node_modules/,       // ignore node_modules for faster watching
+  //   poll: 1000,                    // poll interval in ms (for network drives/VMs)
+  //   aggregateTimeout: 300,         // delay rebuild after first change (ms)
+  // },
+
+  // --- Custom loaders ---
+  // module: {
+  //   rules: [
+  //     { test: /\.yaml$/, use: 'yaml-loader' },
+  //     { test: /\.graphql$/, use: 'graphql-tag/loader' },
+  //   ],
+  // },
+
+  // --- Chunk splitting ---
+  // optimization: {
+  //   splitChunks: { chunks: 'all' },  // split shared code into separate chunks
+  //   minimize: true,                  // enable minimizer (terser/swc)
+  // },
+
   plugins: [
     new NxAppRspackPlugin({
       target: 'node',
@@ -23,6 +64,21 @@ module.exports = {
       generatePackageJson: false,
       // Externalize all node_modules
       externalDependencies: 'all',
+
+      // --- Additional NxAppRspackPlugin options ---
+      // skipTypeChecking: true,        // skip TS type-checking within the plugin
+      // sourceMap: true,               // emit source maps (true | false | 'hidden')
+      // extractLicenses: true,         // extract licenses to separate file
+      // namedChunks: true,             // use entry names for chunk filenames
+      // vendorChunk: true,             // separate vendor bundle
+      // runtimeChunk: true,            // separate runtime bundle
+      // extractCss: true,              // extract CSS to files (web targets only)
+      // outputPath: '../../dist/apps/nx-nest',  // override output dir
+
+      // --- File replacements ---
+      // fileReplacements: [
+      //   { replace: './src/environments/environment.ts', with: './src/environments/environment.prod.ts' }
+      // ],
     }),
     // Plugin to modify externals after NxAppRspackPlugin - bundle @nx-shay/shared
     {

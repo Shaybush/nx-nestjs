@@ -6,15 +6,87 @@
   "tags": ["type:app", "scope:backend"],
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/rspack:rspack",
+      "outputs": ["{options.outputPath}"],
       "options": {
-        "command": "rspack build",
-        "args": ["--node-env=production"],
-        "cwd": "apps/nx-nest"
+        "outputPath": "dist/apps/nx-nest",
+        "rspackConfig": "apps/nx-nest/rspack.config.js",
+        "tsConfig": "apps/nx-nest/tsconfig.app.json",
+        "skipTypeChecking": true
+
+        // --- Target platform ---
+        // "target": "node",                    // "web" | "node" - platform to target
+
+        // --- Entry points ---
+        // "main": "apps/nx-nest/src/main.ts",  // main entry file (alternative to entry in rspack.config.js)
+        // "outputFileName": "main.js",         // rename the main output bundle file
+        // "additionalEntryPoints": [            // extra entry points beyond main
+        //   { "entryName": "worker", "entryPath": "apps/nx-nest/src/worker.ts" }
+        // ],
+
+        // --- Build mode & optimization ---
+        // "mode": "production",                // "development" | "production" | "none"
+        // "optimization": true,                // enable minification/tree-shaking (or { "scripts": true, "styles": true })
+        // "namedChunks": true,                 // name bundles by entry file instead of numeric IDs
+        // "vendorChunk": true,                 // split vendor (node_modules) into separate bundle
+        // "runtimeChunk": true,                // extract rspack runtime into its own bundle
+
+        // --- Source maps ---
+        // "sourceMap": true,                   // true | false | "hidden" for error-reporting only
+
+        // --- Output hashing ---
+        // "outputHashing": "none",             // "none" | "all" | "media" | "bundles" - cache-busting filenames
+
+        // --- Dependencies ---
+        // "externalDependencies": "all",       // "all" | "none" | ["specific-pkg"] - what stays external
+        // "generatePackageJson": true,         // auto-generate package.json with prod deps for Docker
+        // "runtimeDependencies": ["dotenv"],   // extra deps in generated package.json (requires generatePackageJson)
+        // "buildLibsFromSource": true,         // true = bundle libs from source; false = use pre-built outputs
+
+        // --- Assets ---
+        // "assets": ["apps/nx-nest/src/assets"],
+
+        // --- File replacements (env-specific swaps) ---
+        // "fileReplacements": [
+        //   { "replace": "apps/nx-nest/src/environments/environment.ts",
+        //     "with": "apps/nx-nest/src/environments/environment.prod.ts" }
+        // ],
+
+        // --- Licenses ---
+        // "extractLicenses": true,             // extract third-party licenses into separate file
+
+        // --- Build analysis ---
+        // "statsJson": true,                   // output stats.json for bundle analyzers
+        // "progress": true,                    // show build progress in console
+
+        // --- Type checking ---
+        // "memoryLimit": 4096,                 // memory limit (MB) for type-check worker
+
+        // --- Watch mode ---
+        // "poll": 1000,                        // file-watching poll interval in ms (for network drives/VMs)
+        // "cache": true,                       // persistent rspack cache
+
+        // --- Advanced ---
+        // "standardRspackConfigFunction": false, // true = rspack.config.js exports standard rspack fn
+        // "transformers": ["my-ts-transformer"]  // TypeScript compiler transformer plugins
       },
       "configurations": {
         "development": {
-          "args": ["--node-env=development"]
+          "mode": "development"
+          // "sourceMap": true,
+          // "optimization": false,
+          // "namedChunks": true
+        },
+        "production": {
+          "mode": "production"
+          // "sourceMap": "hidden",
+          // "optimization": true,
+          // "extractLicenses": true,
+          // "outputHashing": "all",
+          // "fileReplacements": [
+          //   { "replace": "apps/nx-nest/src/environments/environment.ts",
+          //     "with": "apps/nx-nest/src/environments/environment.prod.ts" }
+          // ]
         }
       }
     },
