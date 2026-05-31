@@ -1,0 +1,427 @@
+/* ========================================== */
+/* Modern Color Scheme - Light & Dark Modes */
+/* ========================================== */
+
+/* Light Theme Colors */
+:root {
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-light: rgba(59, 130, 246, 0.1);
+  --primary-border: rgba(59, 130, 246, 0.2);
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+
+  --border-primary: #d1d5db;
+  --border-secondary: #e5e7eb;
+  --border-focus: #3b82f6;
+
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.15);
+}
+
+/* Dark Theme Colors */
+[data-theme="dark"] {
+  --primary-color: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-light: rgba(59, 130, 246, 0.15);
+  --primary-border: rgba(59, 130, 246, 0.3);
+
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-tertiary: #374151;
+
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
+
+  --border-primary: #374151;
+  --border-secondary: #4b5563;
+  --border-focus: #3b82f6;
+
+  --shadow-light: rgba(0, 0, 0, 0.3);
+  --shadow-medium: rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================== */
+/* Remove Dropdown Box Borders - Global Override */
+/* ========================================== */
+
+/* Remove borders from all Material-UI Select dropdowns */
+.MuiSelect-select {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Remove borders from Select component itself */
+.MuiOutlinedInput-root {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Remove borders from Select fieldset */
+.MuiOutlinedInput-root fieldset {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Remove borders from Select when focused */
+.MuiOutlinedInput-root.Mui-focused fieldset {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Remove borders from Select when hovered */
+.MuiOutlinedInput-root:hover fieldset {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Remove borders from Select dropdown paper */
+.MuiPaper-root.MuiMenu-paper,
+.MuiPaper-root.MuiPopover-paper {
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Remove borders from Select menu items */
+.MuiMenuItem-root {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Specific styling for month and year select dropdowns */
+.month-select-dropdown .MuiPaper-root,
+.month-select-dropdown .MuiMenu-paper,
+.month-select-dropdown .MuiPopover-paper {
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.month-select-dropdown .MuiMenuItem-root {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Year select dropdown styling */
+.year-select-dropdown .MuiPaper-root,
+.year-select-dropdown .MuiMenu-paper,
+.year-select-dropdown .MuiPopover-paper {
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.year-select-dropdown .MuiMenuItem-root {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Remove all borders from Select dropdowns globally */
+.MuiSelect-root .MuiPaper-root,
+.MuiSelect-root .MuiMenu-paper,
+.MuiSelect-root .MuiPopover-paper {
+  border: none !important;
+  outline: none !important;
+}
+
+.MuiSelect-root .MuiMenuItem-root {
+  border: none !important;
+  outline: none !important;
+}
+
+/* ========================================== */
+/* Base Calendar Styles */
+/* ========================================== */
+
+.rdp-root {
+  --rdp-accent-color: var(--primary-color);
+  --rdp-accent-background-color: var(--primary-light);
+  --rdp-range_middle-background-color: var(--primary-light);
+  --rdp-range_middle-color: var(--text-primary);
+  --rdp-range_start-background: var(--primary-color);
+  --rdp-range_start-color: #ffffff;
+  --rdp-range_end-background: var(--primary-color);
+  --rdp-range_end-color: #ffffff;
+  --rdp-day-height: 32px;
+  --rdp-day-width: 32px;
+  --rdp-today-color: var(--primary-color);
+}
+
+/* ========================================== */
+/* Hide Native Elements */
+/* ========================================== */
+
+.rdp-nav,
+.rdp-caption,
+.rdp-caption_label {
+  display: none !important;
+}
+
+/* ========================================== */
+/* Custom Navigation Styling */
+/* ========================================== */
+
+.custom-navigation {
+  background: transparent;
+  border-radius: 8px;
+}
+
+/* ========================================== */
+/* Custom Select Styling */
+/* ========================================== */
+
+.custom-select .MuiOutlinedInput-root {
+  background-color: transparent;
+  color: var(--text-primary);
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.custom-select .MuiOutlinedInput-root:hover {
+  background-color: var(--primary-light);
+}
+
+.custom-select .MuiOutlinedInput-root.Mui-focused {
+  background-color: var(--primary-light);
+}
+
+.custom-select .MuiSelect-select {
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  padding: 6px 12px;
+}
+
+.custom-select .MuiSelect-icon {
+  color: var(--primary-color);
+}
+
+/* ========================================== */
+/* Custom Navigation Button Styling */
+/* ========================================== */
+
+.custom-nav-button {
+  background: transparent;
+  border: none;
+  color: var(--primary-color);
+  transition: all 0.2s ease;
+}
+
+.custom-nav-button:hover {
+  background-color: var(--primary-light);
+  transform: scale(1.05);
+}
+
+.custom-nav-button:active {
+  transform: scale(0.95);
+}
+
+.custom-nav-button:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* ========================================== */
+/* Enhanced Calendar Styles */
+/* ========================================== */
+
+.enhanced-calendar {
+  --rdp-day-height: 32px;
+  --rdp-day-width: 32px;
+}
+
+/* Day Styling */
+.enhanced-calendar .rdp-day {
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.enhanced-calendar .rdp-day:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: var(--primary-light);
+  transform: scale(1.05);
+}
+
+/* Today Indicator */
+.enhanced-calendar .rdp-day_today {
+  color: var(--primary-color);
+  font-weight: 600;
+  position: relative;
+}
+
+.enhanced-calendar .rdp-day_today::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border: 2px solid var(--primary-color);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Range Selection */
+.enhanced-calendar .rdp-day_range_start,
+.enhanced-calendar .rdp-day_range_end {
+  background-color: var(--primary-color);
+  color: #ffffff;
+  font-weight: 600;
+  z-index: 5;
+}
+
+.enhanced-calendar .rdp-day_range_middle {
+  background-color: var(--primary-light);
+  color: var(--text-primary);
+  z-index: 4;
+}
+
+/* Outside Days - Enhanced muted styling */
+.enhanced-calendar .rdp-day_outside {
+  color: var(--text-muted) !important;
+  opacity: 0.5 !important;
+  font-weight: 400 !important;
+}
+
+/* Ensure outside days maintain muted appearance even when hovered */
+.enhanced-calendar .rdp-day_outside:hover {
+  background-color: transparent !important;
+  color: var(--text-muted) !important;
+  opacity: 0.5 !important;
+}
+
+/* Disabled Days - Enhanced styling for future dates */
+.enhanced-calendar .rdp-day:disabled,
+.enhanced-calendar .rdp-day[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed !important;
+  color: var(--text-muted);
+  background-color: transparent !important;
+  pointer-events: none;
+}
+
+/* Ensure disabled days don't show hover effects */
+.enhanced-calendar .rdp-day:disabled:hover,
+.enhanced-calendar .rdp-day[disabled]:hover {
+  background-color: transparent !important;
+  transform: none !important;
+  cursor: not-allowed !important;
+}
+
+/* Focus States */
+.enhanced-calendar .rdp-day:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  z-index: 10;
+}
+
+/* Week Headers */
+.enhanced-calendar .rdp-head_cell {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ========================================== */
+/* RTL Support */
+/* ========================================== */
+
+[dir="rtl"] .rdp-root {
+  direction: rtl;
+}
+
+[dir="rtl"] .rdp-head_cell {
+  text-align: center;
+}
+
+[dir="rtl"] .rdp-day {
+  text-align: center;
+}
+
+/* RTL Calendar Classes */
+.rtl-calendar {
+  direction: rtl;
+}
+
+.rtl-calendar .rdp-root {
+  direction: rtl;
+}
+
+.ltr-calendar {
+  direction: ltr;
+}
+
+.ltr-calendar .rdp-root {
+  direction: ltr;
+}
+
+/* ========================================== */
+/* RTL Input Fields Support - Fixed */
+/* ========================================== */
+
+/* RTL Input Fields - Moved to BasicDateRangePicker.rtl.css */
+
+/* RTL Input Direction - Moved to BasicDateRangePicker.rtl.css */
+
+/* Enhanced RTL/LTR TextField Support - Moved to BasicDateRangePicker.rtl.css */
+
+/* Force RTL/LTR on all input elements - Moved to BasicDateRangePicker.rtl.css */
+
+/* ========================================== */
+/* Responsive Design */
+/* ========================================== */
+
+@media (max-width: 480px) {
+  .enhanced-calendar {
+    --rdp-day-height: 28px;
+    --rdp-day-width: 28px;
+  }
+
+  .custom-select .MuiOutlinedInput-root {
+    min-height: 36px;
+  }
+
+  .custom-nav-button {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+  }
+}
+
+/* ========================================== */
+/* Reduced Motion Support */
+/* ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .enhanced-calendar .rdp-day,
+  .enhanced-calendar .rdp-day:hover,
+  .custom-nav-button,
+  .custom-select .MuiOutlinedInput-root {
+    transition: none;
+    transform: none !important;
+  }
+}
+
+.rdp-month_caption {
+  display: none;
+}
+
+/* ========================================== */
+/* Global Material-UI RTL/LTR Support - Moved to BasicDateRangePicker.rtl.css */
+/* ========================================== */
+
+/* RTL/LTR support for Menu items - Moved to BasicDateRangePicker.rtl.css */

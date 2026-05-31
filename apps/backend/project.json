@@ -1,0 +1,146 @@
+{
+  "name": "@iagent/backend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/backend",
+        "main": "apps/backend/src/main.ts",
+        "tsConfig": "apps/backend/tsconfig.app.json",
+        "webpackConfig": "apps/backend/webpack.config.js",
+        "assets": ["apps/backend/src/assets"]
+      },
+      "configurations": {
+        "local": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "watch": true
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "watch": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/backend/src/environments/environment.ts",
+              "with": "apps/backend/src/environments/environment.dev.ts"
+            }
+          ]
+        },
+        "stage": {
+          "optimization": true,
+          "extractLicenses": true,
+          "sourceMap": true,
+          "watch": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/backend/src/environments/environment.ts",
+              "with": "apps/backend/src/environments/environment.stage.ts"
+            }
+          ]
+        },
+        "test": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "watch": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/backend/src/environments/environment.ts",
+              "with": "apps/backend/src/environments/test.env.ts"
+            }
+          ]
+        },
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "sourceMap": false,
+          "watch": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/backend/src/environments/environment.ts",
+              "with": "apps/backend/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "local",
+      "options": {
+        "buildTarget": "@iagent/backend:build:local",
+        "watch": true,
+        "runBuildTargetDependencies": true
+      },
+      "configurations": {
+        "local": {
+          "buildTarget": "@iagent/backend:build:local",
+          "watch": true,
+          "runBuildTargetDependencies": true
+        },
+        "development": {
+          "buildTarget": "@iagent/backend:build:development",
+          "watch": true,
+          "runBuildTargetDependencies": true
+        },
+        "stage": {
+          "buildTarget": "@iagent/backend:build:stage",
+          "watch": false,
+          "runBuildTargetDependencies": true
+        },
+        "test": {
+          "buildTarget": "@iagent/backend:build:test",
+          "watch": true,
+          "runBuildTargetDependencies": true
+        },
+        "production": {
+          "buildTarget": "@iagent/backend:build:production",
+          "watch": false,
+          "runBuildTargetDependencies": true
+        }
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/apps/backend"
+      ],
+      "options": {
+        "jestConfig": "apps/backend/jest.config.js",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "apps/backend/**/*.{ts,js}"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "tsConfig": "apps/backend/tsconfig.app.json",
+        "main": "apps/backend/src/main.ts",
+        "outputPath": "dist/apps/backend"
+      }
+    }
+  },
+  "projectType": "application",
+  "tags": [
+    "scope:backend",
+    "type:app"
+  ]
+}

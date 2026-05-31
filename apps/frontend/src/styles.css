@@ -1,0 +1,188 @@
+/* You can add global styles to this file, and also import other style files */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fix Material-UI overlay components blocking touch interactions */
+.MuiDrawer-root {
+  pointer-events: auto !important;
+}
+
+.MuiModal-root .MuiBackdrop-root {
+  pointer-events: auto !important;
+}
+
+.MuiDrawer-paper {
+  pointer-events: auto !important;
+}
+
+/* RTL/LTR Direction Support */
+html {
+  transition: direction 0.3s ease;
+}
+
+/* Ensure proper text alignment for RTL languages */
+html[dir="rtl"] {
+  text-align: right;
+}
+
+html[dir="ltr"] {
+  text-align: left;
+}
+
+/* Global RTL support for all elements */
+html[dir="rtl"] * {
+  direction: rtl;
+}
+
+html[dir="ltr"] * {
+  direction: ltr;
+}
+
+/* RTL-aware flexbox and grid */
+html[dir="rtl"] .flex,
+html[dir="rtl"] .grid {
+  direction: rtl;
+}
+
+/* RTL-aware margins and paddings - Using logical properties */
+html[dir="rtl"] .ml-auto {
+  margin-inline-start: unset !important;
+  margin-inline-end: auto !important;
+}
+
+html[dir="rtl"] .mr-auto {
+  margin-inline-end: unset !important;
+  margin-inline-start: auto !important;
+}
+
+/* RTL-aware positioning - Using logical properties */
+html[dir="rtl"] .left-0 {
+  inset-inline-start: unset !important;
+  inset-inline-end: 0 !important;
+}
+
+html[dir="rtl"] .right-0 {
+  inset-inline-end: unset !important;
+  inset-inline-start: 0 !important;
+}
+
+/* RTL-aware text alignment */
+html[dir="rtl"] .text-left {
+  text-align: right !important;
+}
+
+html[dir="rtl"] .text-right {
+  text-align: left !important;
+}
+
+/* RTL-aware Material-UI components */
+html[dir="rtl"] .MuiTextField-root input {
+  text-align: right !important;
+  direction: rtl !important;
+}
+
+html[dir="rtl"] .MuiTextField-root label {
+  text-align: right !important;
+  direction: rtl !important;
+}
+
+html[dir="rtl"] .MuiInputBase-input {
+  text-align: right !important;
+  direction: rtl !important;
+}
+
+/* RTL-aware form elements */
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select {
+  text-align: right !important;
+  direction: rtl !important;
+}
+
+/* RTL-aware buttons */
+html[dir="rtl"] button {
+  direction: rtl;
+}
+
+/* RTL-aware typography */
+html[dir="rtl"] .MuiTypography-root {
+  direction: rtl;
+}
+
+/* RTL-aware form controls */
+html[dir="rtl"] .MuiFormControl-root {
+  direction: rtl;
+}
+
+html[dir="rtl"] .MuiFormLabel-root {
+  direction: rtl;
+}
+
+/* RTL-aware input groups */
+html[dir="rtl"] .MuiInputAdornment-root {
+  direction: rtl;
+}
+
+/* RTL-aware select components */
+html[dir="rtl"] .MuiSelect-select {
+  text-align: right !important;
+  direction: rtl !important;
+}
+
+/* RTL-aware menu items */
+html[dir="rtl"] .MuiMenuItem-root {
+  text-align: right;
+  direction: rtl;
+}
+
+/* RTL-aware dialog content */
+html[dir="rtl"] .MuiDialogContent-root {
+  direction: rtl;
+}
+
+/* RTL-aware card content */
+html[dir="rtl"] .MuiCardContent-root {
+  direction: rtl;
+}
+
+/* RTL-aware list items */
+html[dir="rtl"] .MuiListItem-root {
+  direction: rtl;
+}
+
+/* RTL-aware list item text */
+html[dir="rtl"] .MuiListItemText-root {
+  direction: rtl;
+}
+
+/* RTL-aware list item button */
+html[dir="rtl"] .MuiListItemButton-root {
+  direction: rtl;
+}
+
+/* Smooth transitions for layout changes - exclude main layout components */
+*:not(#iagent-sidebar):not(#iagent-input-area):not(#iagent-input-content):not(
+    #iagent-theme-toggle
+  ) {
+  transition:
+    margin 0.2s ease,
+    padding 0.2s ease;
+}
+
+/* Fix for Material-UI components in RTL */
+html[dir="rtl"] .MuiDrawer-paper {
+  inset-inline-end: 0;
+  inset-inline-start: auto;
+}
+
+html[dir="rtl"] .MuiIconButton-root:not(.no-rtl-transform) {
+  transform: scaleX(-1);
+}
+
+/* Ensure proper scrollbar position */
+html[dir="rtl"] ::-webkit-scrollbar {
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+}

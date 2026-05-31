@@ -1,0 +1,419 @@
+import { BadRequestException, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Chat, ChatDocument, ChatMessage, ChatMessageDocument, ChatFilter, ChatFilterDocument } from '../schemas/chat.schema';
+
+export interface CreateMessageDto {
+  id: string;
+  chatId: string;
+  userId: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: Date;
+  metadata?: { 'iagent-version'?: string; 'session-id'?: string };
+  filterId?: string | null;
+  filterVersion?: number | null;
+  chatName?: string | null;
+}
+
+export interface CreateFilterDto {
+  filterId: string;
+  version?: number;
+  name: string;
+  userId: string;
+  chatId: string | null;
+  filterConfig: Record<string, unknown>;
+  isActive?: boolean;
+}
+
+export interface EnsureChatParams {
+  chatId: string;
+  userId: string;
+  name?: string;
+  timestamp?: Date;
+}
+
+export interface CreateChatInput {
+  userId: string;
+  chatId?: string;
+  name?: string;
+  settings?: Record<string, unknown>;
+}
+
+@Injectable()
+export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
+  constructor(
+    @Optional() @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
+    @Optional() @InjectModel(ChatMessage.name) private messageModel: Model<ChatMessageDocument>,
+    @Optional() @InjectModel(ChatFilter.name) private filterModel: Model<ChatFilterDocument>,
+  ) {
+    if (!this.chatModel || !this.messageModel || !this.filterModel) {
+      this.logger.error('MongoDB models not available - ChatService requires MongoDB to be configured');
+      throw new Error('MongoDB models are required. Please ensure MONGODB_URI is configured correctly.');
+    }
+    this.logger.log('MongoDB enabled - data will persist');
+  }
+
+  private scheduleFilterCleanup(userId: string): void {
+    setImmediate(() => this.cleanupUnusedFilterVersions(userId).catch((err) => {
+      this.logger.warn(`Filter cleanup failed: ${err?.message || 'unknown error'}`);
+    }));
+  }
+
+  private isDuplicateKeyError(error: unknown): boolean {
+    return error !== null && typeof error === 'object' && 'code' in error && error.code === 11000;
+  }
+
+  private createInitialChatName(content: string | undefined): string | undefined {
+    if (!content) return undefined;
+    const normalized = content.replace(/\s+/g, ' ').trim();
+    if (!normalized) return undefined;
+    return normalized.length > 60 ? `${normalized.slice(0, 57)}...` : normalized;
+  }
+
+  // ==================== CHAT MANAGEMENT ====================
+
+  async createChat(input: CreateChatInput): Promise<ChatDocument> {
+    const name = input.name?.trim() || 'New Chat';
+    const chatId = (input.chatId ?? `chat_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`).trim();
+
+    const existing = await this.chatModel.findOne({ chatId, userId: input.userId }).exec();
+    if (existing) return existing;
+
+    const now = new Date();
+    try {
+      const chat = new this.chatModel({
+        chatId,
+        userId: input.userId,
+        name,
+        createdAt: now,
+        lastMessageAt: now,
+        messageCount: 0,
+        settings: input.settings ?? {},
+      });
+      return await chat.save();
+    } catch (error: unknown) {
+      if (this.isDuplicateKeyError(error)) {
+        const existingChat = await this.chatModel.findOne({ chatId, userId: input.userId }).exec();
+        if (existingChat) return existingChat;
+      }
+      throw error;
+    }
+  }
+
+  async getChat(chatId: string, userId: string): Promise<ChatDocument> {
+    const chat = await this.chatModel.findOne({ chatId, userId }).exec();
+    if (!chat) throw new NotFoundException(`Chat with ID ${chatId} not found`);
+    return chat;
+  }
+
+  async ensureChatExists(params: EnsureChatParams): Promise<ChatDocument> {
+    const { chatId, userId, name, timestamp } = params;
+    const now = timestamp || new Date();
+    const defaultName = name?.trim() || 'New Chat';
+
+    try {
+      const result = await this.chatModel.findOneAndUpdate(
+        { chatId, userId },
+        {
+          $setOnInsert: { chatId, userId, name: defaultName, createdAt: now },
+          $set: { lastMessageAt: now, updatedAt: now },
+        },
+        { upsert: true, new: true }
+      ).exec();
+
+      if (result) return result;
+
+      // Fallback: try to find or create
+      const existing = await this.chatModel.findOne({ chatId, userId }).exec();
+      if (existing) {
+        return await this.chatModel.findOneAndUpdate(
+          { chatId, userId },
+          { $set: { lastMessageAt: now, updatedAt: now } },
+          { new: true }
+        ).exec() || existing;
+      }
+
+      const newChat = new this.chatModel({
+        chatId, userId, name: defaultName, createdAt: now, lastMessageAt: now, updatedAt: now,
+      });
+      return await newChat.save();
+    } catch (error: unknown) {
+      if (this.isDuplicateKeyError(error)) {
+        const existing = await this.chatModel.findOne({ chatId, userId }).exec();
+        if (existing) return existing;
+      }
+      throw error;
+    }
+  }
+
+  async updateChatName(chatId: string, userId: string, name: string): Promise<ChatDocument> {
+    const normalized = name.trim();
+    if (!normalized) throw new BadRequestException('Chat name cannot be empty');
+
+    const chat = await this.chatModel.findOneAndUpdate(
+      { chatId, userId },
+      { name: normalized, updatedAt: new Date() },
+      { new: true }
+    ).exec();
+
+    if (!chat) throw new NotFoundException(`Chat with ID ${chatId} not found`);
+    return chat;
+  }
+
+  async listChats(userId: string): Promise<ChatDocument[]> {
+    return this.chatModel.find({ userId }).sort({ lastMessageAt: -1 }).exec();
+  }
+
+  async deleteChat(chatId: string, userId: string): Promise<void> {
+    const chat = await this.chatModel.findOneAndDelete({ chatId, userId }).exec();
+    if (!chat) throw new NotFoundException(`Chat with ID ${chatId} not found`);
+
+    await Promise.all([
+      this.messageModel.deleteMany({ chatId, userId }).exec(),
+      this.filterModel.deleteMany({ chatId, userId }).exec(),
+    ]);
+
+    this.scheduleFilterCleanup(userId);
+  }
+
+  // ==================== MESSAGE MANAGEMENT ====================
+
+  async addMessage(messageDto: CreateMessageDto): Promise<ChatMessageDocument> {
+    const timestamp = messageDto.timestamp || new Date();
+    const chatNameHint = messageDto.chatName?.trim()
+      || (messageDto.role === 'user' ? this.createInitialChatName(messageDto.content) : undefined);
+
+    const chat = await this.ensureChatExists({
+      chatId: messageDto.chatId,
+      userId: messageDto.userId,
+      name: chatNameHint,
+      timestamp,
+    });
+
+    const existingMessage = await this.messageModel.findOne({
+      id: messageDto.id,
+      chatId: messageDto.chatId,
+      userId: messageDto.userId,
+    }).exec();
+
+    if (existingMessage) {
+      this.logger.log(`Message ${messageDto.id} already exists, skipping duplicate save`);
+      await this.chatModel.findOneAndUpdate(
+        { chatId: messageDto.chatId, userId: messageDto.userId },
+        { lastMessageAt: timestamp }
+      ).exec();
+      return existingMessage;
+    }
+
+    let filterId = messageDto.filterId ?? null;
+    let filterVersion = messageDto.filterVersion ?? null;
+
+    if (chat.activeFilterId && !filterId) {
+      const activeFilter = await this.filterModel
+        .findOne({ filterId: chat.activeFilterId, userId: messageDto.userId, isActive: true })
+        .sort({ version: -1 })
+        .exec();
+      if (activeFilter) {
+        filterId = activeFilter.filterId;
+        filterVersion = activeFilter.version;
+      }
+    }
+
+    const message = new this.messageModel({ ...messageDto, timestamp, filterId, filterVersion });
+    const savedMessage = await message.save();
+
+    await this.chatModel.findOneAndUpdate(
+      { chatId: messageDto.chatId, userId: messageDto.userId },
+      { lastMessageAt: timestamp, $inc: { messageCount: 1 } }
+    ).exec();
+
+    return savedMessage;
+  }
+
+  async getChatMessages(chatId: string, userId: string): Promise<ChatMessageDocument[]> {
+    const chat = await this.chatModel.findOne({ chatId, userId }).exec();
+    if (!chat) return [];
+    return this.messageModel.find({ chatId, userId }).sort({ timestamp: 1 }).exec();
+  }
+
+  async deleteMessagesFrom(chatId: string, userId: string, messageId: string): Promise<void> {
+    const chat = await this.chatModel.findOne({ chatId, userId }).exec();
+    if (!chat) throw new NotFoundException(`Chat with ID ${chatId} not found`);
+
+    const targetMessage = await this.messageModel.findOne({ chatId, userId, id: messageId }).exec();
+    if (!targetMessage) throw new NotFoundException(`Message with ID ${messageId} not found`);
+
+    await this.messageModel.deleteMany({ chatId, userId, timestamp: { $gte: targetMessage.timestamp } }).exec();
+
+    const [latestMessage, remainingCount] = await Promise.all([
+      this.messageModel.findOne({ chatId, userId }).sort({ timestamp: -1 }).exec(),
+      this.messageModel.countDocuments({ chatId, userId }).exec(),
+    ]);
+
+    await this.chatModel.findOneAndUpdate(
+      { chatId, userId },
+      { lastMessageAt: latestMessage?.timestamp || chat.createdAt, messageCount: remainingCount }
+    ).exec();
+
+    this.scheduleFilterCleanup(userId);
+  }
+
+  async editMessage(
+    chatId: string,
+    userId: string,
+    messageId: string,
+    content: string,
+    filterId?: string | null,
+    filterVersion?: number | null
+  ): Promise<ChatMessageDocument> {
+    const chat = await this.chatModel.findOne({ chatId, userId }).exec();
+    if (!chat) throw new NotFoundException(`Chat with ID ${chatId} not found`);
+
+    const targetMessage = await this.messageModel.findOne({ chatId, userId, id: messageId }).exec();
+    if (!targetMessage) throw new NotFoundException(`Message with ID ${messageId} not found`);
+    if (targetMessage.role !== 'user') throw new BadRequestException('Only user messages can be edited');
+
+    await this.messageModel.deleteMany({ chatId, userId, timestamp: { $gt: targetMessage.timestamp } }).exec();
+
+    const updatedMessage = await this.messageModel.findOneAndUpdate(
+      { chatId, userId, id: messageId },
+      { content, filterId: filterId ?? null, filterVersion: filterVersion ?? null, timestamp: new Date() },
+      { new: true }
+    ).exec();
+
+    if (!updatedMessage) throw new NotFoundException(`Failed to update message ${messageId}`);
+
+    const remainingCount = await this.messageModel.countDocuments({ chatId, userId }).exec();
+    await this.chatModel.findOneAndUpdate(
+      { chatId, userId },
+      { lastMessageAt: updatedMessage.timestamp, messageCount: remainingCount }
+    ).exec();
+
+    this.scheduleFilterCleanup(userId);
+    return updatedMessage;
+  }
+
+  // ==================== FILTER MANAGEMENT ====================
+
+  async createFilter(createFilterDto: CreateFilterDto): Promise<ChatFilterDocument> {
+    const latestVersion = await this.filterModel
+      .findOne({ filterId: createFilterDto.filterId, userId: createFilterDto.userId })
+      .sort({ version: -1 })
+      .exec();
+
+    const version = createFilterDto.version ?? (latestVersion ? latestVersion.version + 1 : 1);
+    const filter = new this.filterModel({ ...createFilterDto, version });
+    const savedFilter = await filter.save();
+
+    if (createFilterDto.chatId) {
+      await this.chatModel.findOneAndUpdate(
+        { chatId: createFilterDto.chatId, userId: createFilterDto.userId },
+        { $addToSet: { associatedFilters: createFilterDto.filterId } }
+      ).exec();
+    }
+
+    return savedFilter;
+  }
+
+  async getFiltersForChat(chatId: string | null, userId: string): Promise<ChatFilterDocument[]> {
+    if (chatId) {
+      const [chatFilters, globalFilters] = await Promise.all([
+        this.filterModel.find({ userId, chatId }).sort({ version: -1 }).exec(),
+        this.filterModel.find({ userId, chatId: null }).sort({ version: -1 }).exec(),
+      ]);
+      return [...chatFilters, ...globalFilters];
+    }
+    return this.filterModel.find({ userId, chatId: null }).sort({ version: -1 }).exec();
+  }
+
+  async getAllFiltersForUser(userId: string): Promise<ChatFilterDocument[]> {
+    return this.filterModel.find({ userId }).sort({ createdAt: -1, version: -1 }).exec();
+  }
+
+  async updateFilter(filterId: string, userId: string, updateData: Partial<CreateFilterDto>): Promise<ChatFilterDocument> {
+    const latestVersion = await this.filterModel.findOne({ filterId, userId }).sort({ version: -1 }).exec();
+    if (!latestVersion) throw new NotFoundException(`Filter with ID ${filterId} not found`);
+
+    const newFilter = new this.filterModel({
+      filterId,
+      version: latestVersion.version + 1,
+      name: updateData.name ?? latestVersion.name,
+      userId,
+      chatId: updateData.chatId !== undefined ? updateData.chatId : latestVersion.chatId,
+      filterConfig: updateData.filterConfig ?? latestVersion.filterConfig,
+      isActive: updateData.isActive ?? false,
+    });
+
+    await this.filterModel.updateMany({ filterId, userId }, { isActive: false }).exec();
+    return newFilter.save();
+  }
+
+  async deleteFilter(filterId: string, userId: string): Promise<void> {
+    const filters = await this.filterModel.find({ filterId, userId }).exec();
+    if (filters.length === 0) throw new NotFoundException(`Filter with ID ${filterId} not found`);
+
+    await this.filterModel.deleteMany({ filterId, userId }).exec();
+
+    await Promise.all([
+      this.chatModel.updateMany({ userId }, { $pull: { associatedFilters: filterId } }).exec(),
+      this.chatModel.updateMany(
+        { userId, activeFilterId: filterId },
+        { $unset: { activeFilterId: 1 }, $set: { currentFilterConfig: null } }
+      ).exec(),
+    ]);
+  }
+
+  async setActiveFilter(chatId: string, userId: string, filterId: string | null): Promise<ChatDocument> {
+    await this.filterModel.updateMany({ userId, chatId }, { isActive: false }).exec();
+
+    let filterConfig = null;
+    if (filterId) {
+      const filter = await this.filterModel
+        .findOne({ filterId, userId, $or: [{ chatId }, { chatId: null }] })
+        .sort({ version: -1 })
+        .exec();
+
+      if (!filter) throw new NotFoundException(`Filter with ID ${filterId} not found`);
+
+      await this.filterModel.findOneAndUpdate(
+        { filterId, userId, version: filter.version },
+        { isActive: true }
+      ).exec();
+
+      filterConfig = filter.filterConfig;
+    }
+
+    const chat = await this.chatModel.findOneAndUpdate(
+      { chatId, userId },
+      { activeFilterId: filterId, currentFilterConfig: filterConfig },
+      { new: true }
+    ).exec();
+
+    if (!chat) throw new NotFoundException(`Chat with ID ${chatId} not found`);
+    return chat;
+  }
+
+  async cleanupUnusedFilterVersions(userId?: string): Promise<number> {
+    const filterVersions = await this.filterModel.find(userId ? { userId } : {}).exec();
+    let deletedCount = 0;
+
+    for (const filterVersion of filterVersions) {
+      if (filterVersion.isActive) continue;
+
+      const isUsed = await this.messageModel.exists({
+        filterId: filterVersion.filterId,
+        filterVersion: filterVersion.version,
+      });
+
+      if (!isUsed) {
+        await this.filterModel.deleteOne({ _id: filterVersion._id }).exec();
+        deletedCount++;
+      }
+    }
+
+    return deletedCount;
+  }
+}

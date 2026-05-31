@@ -10,6 +10,7 @@
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/nx-nest",
+        "outputFileName": "main.js",
         "rspackConfig": "apps/nx-nest/rspack.config.js",
         "tsConfig": "apps/nx-nest/tsconfig.app.json",
         "skipTypeChecking": true

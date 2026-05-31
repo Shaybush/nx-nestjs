@@ -1,0 +1,83 @@
+{
+  "name": "@iagent/backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "iAgent Backend - NestJS API with Swagger Documentation",
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main.js"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/webpack:webpack",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "options": {
+          "outputPath": "dist/apps/backend",
+          "main": "apps/backend/src/main.ts",
+          "tsConfig": "apps/backend/tsconfig.app.json",
+          "webpackConfig": "apps/backend/webpack.config.js"
+        },
+        "configurations": {
+          "development": {
+            "optimization": false,
+            "extractLicenses": false,
+            "sourceMap": true
+          },
+          "production": {
+            "optimization": true,
+            "extractLicenses": true,
+            "sourceMap": false
+          }
+        }
+      },
+      "serve": {
+        "continuous": true,
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "@iagent/backend:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "@iagent/backend:build:development"
+          },
+          "production": {
+            "buildTarget": "@iagent/backend:build:production"
+          }
+        }
+      }
+    }
+  },
+  "keywords": [
+    "nestjs",
+    "typescript",
+    "api",
+    "swagger",
+    "backend"
+  ],
+  "dependencies": {
+    "@nestjs/axios": "^4.0.1",
+    "@nestjs/jwt": "^11.0.1",
+    "@nestjs/mongoose": "^11.0.3",
+    "@nestjs/passport": "^11.0.5",
+    "axios": "^1.13.2",
+    "mongodb": "^6.20.0",
+    "mongoose": "^8.19.2",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/passport-jwt": "^4.0.1"
+  }
+}

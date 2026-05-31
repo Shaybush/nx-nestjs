@@ -1,0 +1,128 @@
+{
+  "name": "@iagent/frontend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "tags": [
+    "scope:frontend",
+    "type:app"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/frontend"
+      },
+      "configurations": {
+        "local": {
+          "mode": ""
+        },
+        "development": {
+          "mode": "development",
+          "fileReplacements": [
+            {
+              "replace": "apps/frontend/src/environments/environment.ts",
+              "with": "apps/frontend/src/environments/environment.dev.ts"
+            }
+          ]
+        },
+        "stage": {
+          "mode": "stage",
+          "fileReplacements": [
+            {
+              "replace": "apps/frontend/src/environments/environment.ts",
+              "with": "apps/frontend/src/environments/environment.stage.ts"
+            }
+          ]
+        },
+        "production": {
+          "mode": "production",
+          "fileReplacements": [
+            {
+              "replace": "apps/frontend/src/environments/environment.ts",
+              "with": "apps/frontend/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "defaultConfiguration": "local",
+      "options": {
+        "buildTarget": "@iagent/frontend:build"
+      },
+      "configurations": {
+        "local": {
+          "buildTarget": "@iagent/frontend:build:local",
+          "hmr": true,
+          "mode": ""
+        },
+        "stage": {
+          "buildTarget": "@iagent/frontend:build:stage",
+          "hmr": true,
+          "mode": "stage"
+        },
+        "development": {
+          "buildTarget": "@iagent/frontend:build:development",
+          "hmr": true,
+          "mode": "dev"
+        },
+        "production": {
+          "buildTarget": "@iagent/frontend:build:production",
+          "hmr": true,
+          "mode": "production"
+        }
+      }
+    },
+    "preview": {
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "@iagent/frontend:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "@iagent/frontend:build:development"
+        },
+        "production": {
+          "buildTarget": "@iagent/frontend:build:production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/apps/frontend"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "apps/frontend/**/*.{ts,tsx,js,jsx}"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "@nx/vite:build",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/apps/frontend",
+        "mode": "development"
+      }
+    }
+  }
+}

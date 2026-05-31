@@ -1,0 +1,812 @@
+import React from "react";
+import { Box, Snackbar, Alert, IconButton } from "@mui/material";
+import { Clear as ClearIcon } from "@mui/icons-material";
+import { useTranslation } from "../../contexts/TranslationContext";
+import { Translate } from "../Translate";
+import { FilterNameDialog } from "../FilterNameDialog";
+import { FilterDetailsDialog } from "../FilterDetailsDialog";
+import { useToolToggles, TOOL_FILTER_CONFIG } from "../../hooks/useToolToggles";
+import { ToolSettingsDialog, ToolConfiguration } from "../ToolSettingsDialog";
+import { useToolSchemas } from "../../features/tools/api";
+import { usePermissions } from "../../features/auth/api";
+import { DocumentManagementDialog } from "../DocumentManagementDialog";
+import { FILE_UPLOAD_CONFIG } from "../../config/fileUpload";
+import { useFeatureFlag } from "../../hooks/useFeatureFlag";
+
+// Import custom hooks
+import { useFileHandling } from "../../hooks/useFileHandling";
+import { useCountrySelection } from "../../hooks/useCountrySelection";
+import { useDateRange } from "../../hooks/useDateRange";
+import { useFilterManagement } from "../../hooks/useFilterManagement";
+import { useDocumentDialog } from "../../hooks/useDocumentDialog";
+import { useInputAreaUI } from "../../hooks/useInputAreaUI";
+
+// Import sub-components
+import { FileAttachments } from "./FileAttachments";
+import { InputControls } from "./InputControls";
+import { FilterMenu } from "./FilterMenu";
+
+// Import utilities
+import {
+  TOOLS_LIST,
+  filterToolsByPermissions,
+  ToolId,
+} from "../../utils/toolUtils";
+import {
+  createDateFilter,
+  createSendMessageData,
+} from "../../utils/messageUtils";
+
+// Interfaces
+export interface DateFilter {
+  type: "custom" | "picker";
+  customRange?: {
+    amount: number;
+    type: string;
+  };
+  dateRange?: [Date | null, Date | null];
+}
+
+export interface SendMessageData {
+  content: string;
+  dateFilter: DateFilter;
+  selectedCountries: string[];
+  enabledTools: ToolId[];
+  filterId?: string | null;
+  filterVersion?: number | null;
+  attachments?: Array<{
+    id: string;
+    filename: string;
+    size: number;
+    mimetype: string;
+    uploadDate: string;
+  }>;
+}
+
+interface InputAreaProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSend: (data: SendMessageData) => void;
+  onStop?: () => void;
+  onDiscard?: () => void;
+  disabled: boolean;
+  isLoading?: boolean;
+  isDarkMode: boolean;
+  isEditing?: boolean;
+  sidebarOpen?: boolean;
+  sidebarRef?: React.RefObject<HTMLDivElement | null>;
+  sidebarWidth?: number;
+  reportPanelOpen?: boolean;
+  reportPanelWidth?: number;
+  onHeightChange?: (height: number) => void;
+  onVoiceInput?: () => void;
+  onClear?: () => void;
+  onAttachment?: () => void;
+  onFileUploaded?: (file: File) => void;
+  showVoiceButton?: boolean;
+  showClearButton?: boolean;
+  showAttachmentButton?: boolean;
+  currentChatId?: string;
+  authToken?: string;
+}
+
+export function InputArea({
+  value,
+  onChange,
+  onSend,
+  onStop,
+  disabled,
+  isLoading = false,
+  isDarkMode,
+  sidebarOpen = false,
+  sidebarWidth = 250,
+  reportPanelOpen = false,
+  reportPanelWidth = 350,
+  onHeightChange,
+  onVoiceInput,
+  onClear,
+  onAttachment,
+  onFileUploaded,
+  showVoiceButton = false,
+  showClearButton = true,
+  showAttachmentButton = false,
+  currentChatId,
+  authToken,
+}: InputAreaProps) {
+  const { t } = useTranslation();
+
+  // Feature flags
+  const enableFileUpload = useFeatureFlag('enableFileUpload');
+  const enableDocumentManagement = useFeatureFlag('enableDocumentManagement');
+
+  // Initialize all hooks
+  const fileHandling = useFileHandling({ t });
+  const countrySelection = useCountrySelection();
+  const dateRange = useDateRange({ t });
+  const documentDialog = useDocumentDialog({
+    attachedFiles: fileHandling.attachedFiles,
+    setAttachedFiles: fileHandling.setAttachedFiles,
+    t,
+  });
+
+  // Tool toggles and configurations
+  const {
+    enabledTools,
+    toggleTool,
+    toolConfigurations,
+    setToolConfiguration,
+    setToolEnabled,
+    hasUnconfiguredTools,
+    filterAvailability,
+  } = useToolToggles();
+
+  const { flagPopoverOpen, setFlagAnchorEl } = countrySelection;
+  const { datePopoverOpen, setDateAnchorEl, setRangeTypeOpen } = dateRange;
+
+  // Tool schemas and settings dialog
+  const toolSchemas = useToolSchemas();
+  const { data: permissions } = usePermissions();
+  const [toolSettingsOpen, setToolSettingsOpen] = React.useState(false);
+  const { isRTL } = useTranslation();
+
+  // Filter tools based on permissions
+  const availableToolSchemas = React.useMemo(
+    () => filterToolsByPermissions(toolSchemas, permissions),
+    [toolSchemas, permissions]
+  );
+
+  // Filter management
+  const filterManagement = useFilterManagement({
+    currentChatId,
+    authToken,
+    enabledTools,
+    toolConfigurations,
+    selectedFlags: countrySelection.selectedFlags,
+    dateRangeTab: dateRange.dateRangeTab,
+    rangeAmount: dateRange.rangeAmount,
+    rangeType: dateRange.rangeType,
+    dateRange: dateRange.dateRange,
+    setSelectedFlags: countrySelection.setSelectedFlags,
+    setRangeAmount: dateRange.setRangeAmount,
+    setRangeType: dateRange.setRangeType,
+    setDateRange: dateRange.setDateRange,
+    setCommittedTab: dateRange.setCommittedTab,
+    setDateRangeTab: dateRange.setDateRangeTab,
+    toggleTool,
+  });
+
+  // UI state
+  const inputAreaUI = useInputAreaUI({
+    value,
+    isDarkMode,
+    disabled,
+    onHeightChange,
+    toolSchemas: availableToolSchemas,
+    enabledTools,
+    needsToolConfiguration: hasUnconfiguredTools(availableToolSchemas),
+  });
+
+  // Calculate the effective sidebar and report panel widths for positioning
+  const effectiveSidebarWidth = sidebarOpen ? sidebarWidth : 0;
+  const effectiveReportPanelWidth = reportPanelOpen ? reportPanelWidth : 0;
+
+  // Extract values needed for handleKeyDown to avoid ref access issues
+  const needsToolConfig = inputAreaUI.needsToolConfiguration;
+  const attachedFilesCount = fileHandling.attachedFiles.length;
+
+  // Use ref for handleSubmit to avoid dependency issues
+  const handleSubmitRef = React.useRef<(() => Promise<void>) | null>(null);
+
+  React.useEffect(() => {
+    if (!filterAvailability.countries && flagPopoverOpen) {
+      setFlagAnchorEl(null);
+    }
+  }, [filterAvailability.countries, flagPopoverOpen, setFlagAnchorEl]);
+
+  React.useEffect(() => {
+    if (!filterAvailability.dateRange && datePopoverOpen) {
+      setDateAnchorEl(null);
+      setRangeTypeOpen(false);
+    }
+  }, [filterAvailability.dateRange, datePopoverOpen, setDateAnchorEl, setRangeTypeOpen]);
+
+  const handleSubmit = React.useCallback(async () => {
+    if (isLoading && onStop) {
+      onStop();
+    } else if (
+      (value.trim() || (enableFileUpload && fileHandling.attachedFiles.length > 0)) &&
+      !disabled
+    ) {
+      // Check if there are unconfigured tools before submitting
+      if (inputAreaUI.needsToolConfiguration) {
+        setToolSettingsOpen(true);
+        return;
+      }
+
+      // Check file upload status if file upload is enabled
+      if (enableFileUpload) {
+      // Check if any files are still uploading
+      if (fileHandling.uploadingFiles.length > 0) {
+        fileHandling.setFileError(t("files.waitForUploads"));
+        fileHandling.setShowFileError(true);
+        return;
+      }
+
+      // Check if any uploads failed
+      const hasErrors = fileHandling.uploadingFiles.some(
+        (f) => f.status === "error"
+      );
+      if (hasErrors) {
+        fileHandling.setFileError(t("files.uploadErrors"));
+        fileHandling.setShowFileError(true);
+        return;
+        }
+      }
+
+      // Collect all attached file references
+      const attachments = fileHandling.attachedFiles.map((f) => ({
+        id: f.id,
+        filename: f.filename,
+        size: f.size,
+        mimetype: f.mimetype,
+        uploadDate: f.uploadDate,
+      }));
+
+      const dateFilter = createDateFilter({
+        committedTab: dateRange.committedTab,
+        rangeAmount: dateRange.rangeAmount,
+        rangeType: dateRange.rangeType,
+        dateRange: dateRange.dateRange,
+      });
+
+      const sendData = createSendMessageData({
+        content: value,
+        dateFilter,
+        selectedCountries: countrySelection.selectedFlags,
+        enabledTools,
+        filterId: filterManagement.activeFilter?.filterId || null,
+        filterVersion: filterManagement.activeFilter?.version || null,
+        attachments: enableFileUpload ? attachments : undefined,
+      });
+
+      onSend(sendData);
+
+      // Clear all files after successful send
+      fileHandling.clearAllFiles();
+    }
+  }, [isLoading, onStop, value, enableFileUpload, fileHandling, disabled, inputAreaUI.needsToolConfiguration, setToolSettingsOpen, dateRange.committedTab, dateRange.rangeAmount, dateRange.rangeType, dateRange.dateRange, countrySelection.selectedFlags, enabledTools, filterManagement.activeFilter, filterManagement.synchronizedConfigurations, onSend, t]);
+
+  // Update ref when handleSubmit changes
+  React.useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
+
+  // Handle key down events
+  const handleKeyDown = React.useCallback((event: React.KeyboardEvent) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+
+      // If tools need configuration, open settings dialog
+      if (needsToolConfig && value.trim()) {
+        setToolSettingsOpen(true);
+        return;
+      }
+
+      if (
+        (value.trim() || (enableFileUpload && attachedFilesCount > 0)) &&
+        !disabled &&
+        !isLoading
+      ) {
+        handleSubmitRef.current?.();
+      }
+    }
+  }, [needsToolConfig, value, enableFileUpload, attachedFilesCount, disabled, isLoading, setToolSettingsOpen]);
+
+  // Tool toggle handler with hint ring
+  const handleToolToggle = React.useCallback((toolId: ToolId) => {
+    const isCurrentlyEnabled = enabledTools[toolId];
+
+    // Toggle the tool
+    toggleTool(toolId);
+
+    // Update tool configuration to match the toggle state
+    const existingConfig = toolConfigurations[toolId];
+    const newConfig: ToolConfiguration = {
+      toolId,
+      enabled: !isCurrentlyEnabled,
+      parameters: existingConfig?.parameters || {},
+    };
+
+    setToolConfiguration(toolId, newConfig);
+
+    // If enabling a tool that has configuration fields, could show hint ring
+    if (!isCurrentlyEnabled) {
+      const toolSchema = availableToolSchemas.find((schema) => schema.id === toolId);
+      if (
+        toolSchema?.requiresConfiguration &&
+        toolSchema.configurationFields &&
+        Object.keys(toolSchema.configurationFields).length > 0
+      ) {
+        // Could add hint ring animation here if needed
+      }
+    }
+  }, [enabledTools, toggleTool, toolConfigurations, setToolConfiguration, availableToolSchemas]);
+
+  // Tool settings handlers
+  const handleToolConfigurationChange = React.useCallback((
+    toolId: ToolId,
+    config: ToolConfiguration
+  ) => {
+    setToolConfiguration(toolId, config);
+
+    // Also sync with enabledTools state if the enabled state changed
+    if (enabledTools[toolId] !== config.enabled) {
+      setToolEnabled(toolId, config.enabled);
+    }
+  }, [enabledTools, setToolConfiguration, setToolEnabled]);
+
+  // Get filter preview for the dialog - memoized to avoid recalculation
+  const getFilterPreview = React.useMemo(() => {
+    const dateText =
+      dateRange.dateRangeTab === 0
+        ? `${dateRange.rangeAmount} ${t(`dateRange.${dateRange.rangeType}`)} ${t("dateRange.ago")}`
+        : dateRange.dateRange[0] && dateRange.dateRange[1]
+          ? `${dateRange.dateRange[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${dateRange.dateRange[1].toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+          : t("filter.noDateRange");
+
+    return {
+      countries: countrySelection.selectedFlags,
+      tools: (Object.keys(enabledTools) as ToolId[]).filter(
+        (toolId) => enabledTools[toolId]
+      ),
+      dateRange: dateText,
+    };
+  }, [dateRange.dateRangeTab, dateRange.rangeAmount, dateRange.rangeType, dateRange.dateRange, countrySelection.selectedFlags, enabledTools, t]);
+
+  // Disable send button if files are uploading
+  const isUploading = React.useMemo(() => enableFileUpload && fileHandling.uploadingFiles.length > 0, [enableFileUpload, fileHandling.uploadingFiles.length]);
+  const canSend = React.useMemo(() =>
+    Boolean(value.trim()) &&
+    !disabled &&
+    !inputAreaUI.needsToolConfiguration &&
+    !isUploading,
+    [value, disabled, inputAreaUI.needsToolConfiguration, isUploading]
+  );
+  const showStopButton = isLoading;
+
+  return (
+    <>
+      {/* Input Area Container */}
+      <Box
+        id="iagent-input-area"
+        className="iagent-input-container"
+        ref={inputAreaUI.inputContainerRef}
+        sx={{
+          position: "fixed",
+          bottom: 0,
+          insetInlineStart:
+            effectiveSidebarWidth > 0 ? `${effectiveSidebarWidth}px` : "0",
+          insetInlineEnd:
+            effectiveReportPanelWidth > 0
+              ? `${effectiveReportPanelWidth}px`
+              : "0",
+          zIndex: 10,
+          background: isDarkMode
+            ? "linear-gradient(180deg, rgba(10, 10, 10, 0) 0%, rgba(10, 10, 10, 0.75) 50%, rgba(10, 10, 10, 1) 100%)"
+            : "linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.8) 50%, #ffffff 100%)",
+          paddingTop: "20px",
+          paddingBottom: "20px",
+          transition:
+            "inset-inline-start 300ms cubic-bezier(0.4, 0, 0.2, 1), inset-inline-end 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+          "@media (max-width: 768px)": {
+            insetInlineStart: 0,
+            insetInlineEnd: 0,
+            paddingBottom: "env(safe-area-inset-bottom, 10px)",
+            paddingTop: "10px",
+          },
+        }}
+      >
+        {/* Input Area Content Wrapper with Drag & Drop */}
+        <Box
+          id="iagent-input-content"
+          className="iagent-input-content-wrapper"
+          onDragEnter={enableFileUpload ? fileHandling.handleDragEnter : undefined}
+          onDragLeave={enableFileUpload ? fileHandling.handleDragLeave : undefined}
+          onDragOver={enableFileUpload ? fileHandling.handleDragOver : undefined}
+          onDrop={enableFileUpload ? fileHandling.handleDropFiles : undefined}
+          sx={{
+            maxWidth: "768px",
+            margin: "0 auto",
+            paddingInlineStart: "20px",
+            paddingInlineEnd: "20px",
+            width: "100%",
+            boxSizing: "border-box",
+            transition: "all 360ms cubic-bezier(0.34, 0, 0.16, 1)",
+            position: "relative",
+            "@media (max-width: 600px)": {
+              paddingInlineStart: "10px",
+              paddingInlineEnd: "10px",
+            },
+          }}
+        >
+          {/* Drag Overlay */}
+          {enableFileUpload && fileHandling.isDragging && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                insetInlineStart: 0,
+                insetInlineEnd: 0,
+                bottom: 0,
+                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                border: "2px dashed #3b82f6",
+                borderRadius: "24px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 10,
+                pointerEvents: "none",
+              }}
+            >
+              <Box sx={{ fontSize: "18px", color: "#3b82f6" }}>
+                {t("files.dropFilesHere")}
+              </Box>
+            </Box>
+          )}
+
+          {/* Main Input Form Container */}
+          <Box
+            id="iagent-input-form"
+            className="iagent-input-form-container"
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              borderRadius: "24px",
+              backgroundColor: isDarkMode ? "#0d0d0d" : "#fafafa",
+              border: inputAreaUI.isFocused
+                ? `1px solid ${isDarkMode ? "#60a5fa" : "#3b82f6"}`
+                : `1px solid ${isDarkMode ? "#565869" : "#d1d5db"}`,
+              boxShadow: inputAreaUI.isFocused
+                ? `0 0 0 4px ${isDarkMode ? "rgba(96, 165, 250, 0.2)" : "rgba(59, 130, 246, 0.15)"}, 0 8px 24px ${isDarkMode ? "rgba(96, 165, 250, 0.15)" : "rgba(59, 130, 246, 0.12)"}, 0 4px 12px ${isDarkMode ? "rgba(0, 0, 0, 0.2)" : "rgba(0, 0, 0, 0.1)"}`
+                : "0 2px 6px rgba(0, 0, 0, 0.05)",
+              direction: inputAreaUI.textDirection,
+              minHeight: "80px",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                boxShadow: inputAreaUI.isFocused
+                  ? `0 0 0 4px ${isDarkMode ? "rgba(96, 165, 250, 0.2)" : "rgba(59, 130, 246, 0.15)"}, 0 8px 24px ${isDarkMode ? "rgba(96, 165, 250, 0.15)" : "rgba(59, 130, 246, 0.12)"}, 0 4px 12px ${isDarkMode ? "rgba(0, 0, 0, 0.2)" : "rgba(0, 0, 0, 0.1)"}`
+                  : "0 2px 12px rgba(0, 0, 0, 0.1)",
+              },
+            }}
+            onDragEnter={enableFileUpload ? fileHandling.handleDragEnter : undefined}
+            onDragLeave={enableFileUpload ? fileHandling.handleDragLeave : undefined}
+            onDragOver={enableFileUpload ? fileHandling.handleDragOver : undefined}
+            onDrop={enableFileUpload ? fileHandling.handleDropFiles : undefined}
+          >
+            {/* File Attachments */}
+            {enableFileUpload && (
+            <FileAttachments
+              uploadingFiles={fileHandling.uploadingFiles}
+              attachedFiles={fileHandling.attachedFiles}
+              isDarkMode={isDarkMode}
+              textDirection={inputAreaUI.textDirection}
+              onRemoveUploading={fileHandling.removeUploadingFile}
+              onRemoveAttached={fileHandling.removeAttachedFile}
+            />
+            )}
+
+            {/* Main Textarea Container */}
+            <Box sx={{ position: "relative" }}>
+              <form
+                name="iagent-chat-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (canSend && !disabled) {
+                    handleSubmit();
+                  }
+                }}
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
+                data-noautofill="true"
+                autoComplete="off"
+                style={{ margin: 0, padding: 0 }}
+              >
+                <textarea
+                  id="iagent-message-input"
+                  name="iagent-message-input"
+                  className="iagent-textarea-input"
+                  ref={inputAreaUI.textareaRef}
+                  value={value}
+                  onChange={(e) => onChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => inputAreaUI.setIsFocused(true)}
+                  onBlur={() => inputAreaUI.setIsFocused(false)}
+                  placeholder={
+                    inputAreaUI.needsToolConfiguration
+                      ? t("input.disabledDueToConfig")
+                      : inputAreaUI.debugPlaceholder
+                  }
+                  disabled={disabled || inputAreaUI.needsToolConfiguration}
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck="false"
+                  data-form-type="other"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-autocomplete="off"
+                  data-noautofill="true"
+                  data-gramm="false"
+                  data-gramm_editor="false"
+                  data-enable-grammarly="false"
+                  role="textbox"
+                  aria-label="Message input"
+                  aria-autocomplete="none"
+                  style={{
+                    ...inputAreaUI.textareaStyle,
+                    opacity: disabled || inputAreaUI.needsToolConfiguration ? 0.6 : 1,
+                    cursor: disabled || inputAreaUI.needsToolConfiguration
+                      ? "not-allowed"
+                      : "text",
+                    color: inputAreaUI.needsToolConfiguration
+                      ? isDarkMode
+                        ? "#ff9800"
+                        : "#f57c00"
+                      : inputAreaUI.textareaStyle.color,
+                    paddingRight:
+                      showClearButton && value.trim() ? "40px" : "16px",
+                  }}
+                />
+              </form>
+
+              {/* Clear Button - Absolutely Positioned */}
+              {showClearButton && value.trim() && (
+                <IconButton
+                  onClick={() => {
+                    onChange("");
+                    onClear?.();
+                  }}
+                  disabled={disabled}
+                  sx={{
+                    position: "absolute",
+                    top: "8px",
+                    right: isRTL ? "auto" : "8px",
+                    left: isRTL ? "8px" : "auto",
+                    width: "24px",
+                    height: "24px",
+                    backgroundColor: "transparent",
+                    color: isDarkMode ? "#8e8ea0" : "#6b7280",
+                    borderRadius: "12px",
+                    transition: "all 0.2s ease",
+                    zIndex: 1,
+                    "&:hover": {
+                      backgroundColor: isDarkMode
+                        ? "rgba(255, 255, 255, 0.1)"
+                        : "rgba(0, 0, 0, 0.05)",
+                      color: isDarkMode ? "#ffffff" : "#374151",
+                    },
+                  }}
+                  title={t("input.clearTooltip")}
+                >
+                  <ClearIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              )}
+            </Box>
+
+            {/* Input Controls */}
+            <InputControls
+              // Country Selection
+              selectedFlags={countrySelection.selectedFlags}
+              flagPopoverOpen={countrySelection.flagPopoverOpen}
+              flagAnchorEl={countrySelection.flagAnchorEl}
+              flagOptions={countrySelection.flagOptions}
+              onFlagClick={countrySelection.handleFlagClick}
+              onFlagToggle={countrySelection.handleFlagToggle}
+              onFlagClose={countrySelection.closeFlagPopover}
+              // Date Range
+              dateRangeTab={dateRange.dateRangeTab}
+              rangeAmount={dateRange.rangeAmount}
+              rangeType={dateRange.rangeType}
+              rangeTypeOpen={dateRange.rangeTypeOpen}
+              dateRange={dateRange.dateRange}
+              tempDateRange={dateRange.tempDateRange}
+              datePopoverOpen={dateRange.datePopoverOpen}
+              dateAnchorEl={dateRange.dateAnchorEl}
+              timeRangeOptions={dateRange.timeRangeOptions}
+              getDateRangeButtonText={dateRange.getDateRangeButtonText}
+              onDateClick={dateRange.handleDateClick}
+              onDateRangeTabChange={dateRange.setDateRangeTab}
+              onRangeAmountChange={dateRange.setRangeAmount}
+              onRangeTypeChange={dateRange.setRangeType}
+              onRangeTypeToggle={() =>
+                dateRange.setRangeTypeOpen(!dateRange.rangeTypeOpen)
+              }
+              onTempDateRangeChange={dateRange.setTempDateRange}
+              onDateRangeApply={dateRange.handleDateRangeApply}
+              onDateRangeReset={dateRange.handleDateRangeReset}
+              onDateClose={dateRange.closeDatePopover}
+              // Settings
+              shouldShowSettingsIcon={inputAreaUI.shouldShowSettingsIcon}
+              needsToolConfiguration={inputAreaUI.needsToolConfiguration}
+              onToolSettingsOpen={() => setToolSettingsOpen(true)}
+              // Filter
+              chatFilters={filterManagement.chatFilters}
+              activeFilter={filterManagement.activeFilter}
+              onFilterMenuOpen={filterManagement.handleFilterMenuOpen}
+            countryFilterEnabled={filterAvailability.countries}
+            countryFilterRequiredTools={TOOL_FILTER_CONFIG.countries}
+            dateFilterEnabled={filterAvailability.dateRange}
+            dateFilterRequiredTools={TOOL_FILTER_CONFIG.dateRange}
+              // Tools
+              toolsList={TOOLS_LIST}
+              enabledTools={enabledTools}
+              onToolToggle={handleToolToggle}
+              // Action Buttons
+              value={value}
+              showClearButton={showClearButton}
+              showVoiceButton={showVoiceButton}
+              showAttachmentButton={showAttachmentButton}
+              canSend={canSend}
+              showStopButton={showStopButton}
+              disabled={disabled}
+              uploadingFiles={fileHandling.uploadingFiles}
+              attachedFiles={fileHandling.attachedFiles}
+              fileMenuOpen={documentDialog.fileMenuOpen}
+              fileMenuAnchor={documentDialog.fileMenuAnchor}
+              onClear={() => {
+                onChange("");
+                onClear?.();
+              }}
+              onVoiceInput={onVoiceInput}
+              onSubmit={handleSubmit}
+              onFileMenuClick={documentDialog.handleFileMenuClick}
+              onFileMenuClose={documentDialog.handleFileMenuClose}
+              onQuickUpload={() => {
+                if (inputAreaUI.fileInputRef.current) {
+                  documentDialog.handleQuickUpload(
+                    inputAreaUI.fileInputRef as React.RefObject<HTMLInputElement>
+                  );
+                }
+              }}
+              onOpenDocumentManager={enableDocumentManagement ? documentDialog.handleOpenDocumentManager : undefined}
+              enableFileUpload={enableFileUpload}
+              enableDocumentManagement={enableDocumentManagement}
+              // Styling
+              isDarkMode={isDarkMode}
+              t={t}
+            />
+          </Box>
+
+          {/* Helper Text */}
+          <Translate
+            i18nKey="input.disclaimer"
+            fallback="AI can make mistakes. Check important info."
+            as="div"
+            style={{
+              display: "block",
+              marginTop: "8px",
+              color: isDarkMode ? "#8e8ea0" : "#6b7280",
+              fontSize: "12px",
+              lineHeight: "16px",
+              direction: "inherit",
+            }}
+          />
+        </Box>
+      </Box>
+
+      {/* Hidden file input for quick upload */}
+      {enableFileUpload && (
+      <input
+        ref={inputAreaUI.fileInputRef}
+        type="file"
+        multiple
+        onChange={fileHandling.handleFileSelect}
+        style={{ display: "none" }}
+        disabled={disabled}
+      />
+      )}
+
+      {/* Filter Management Menu */}
+      <FilterMenu
+        filterMenuAnchor={filterManagement.filterMenuAnchor}
+        filterMenuOpen={filterManagement.filterMenuOpen}
+        chatFilters={filterManagement.chatFilters}
+        activeFilter={filterManagement.activeFilter}
+        isDarkMode={isDarkMode}
+        t={t}
+        onClose={filterManagement.handleFilterMenuClose}
+        onCreateFilter={filterManagement.createNewFilter}
+        onSelectFilter={filterManagement.selectFilter}
+        onViewFilter={filterManagement.handleViewFilter}
+        onPickFilter={filterManagement.handlePickFilter}
+        onRenameFilter={filterManagement.handleRenameFilter}
+        onDeleteFilter={filterManagement.handleDeleteFilter}
+      />
+
+      {/* Tool Settings Dialog */}
+      <ToolSettingsDialog
+        open={toolSettingsOpen}
+        onClose={() => setToolSettingsOpen(false)}
+        tools={availableToolSchemas}
+        configurations={filterManagement.synchronizedConfigurations}
+        onConfigurationChange={handleToolConfigurationChange}
+        isDarkMode={isDarkMode}
+      />
+
+      {/* Filter Name Dialog for Creating Filters */}
+      <FilterNameDialog
+        open={filterManagement.filterNameDialogOpen}
+        onClose={() => filterManagement.setFilterNameDialogOpen(false)}
+        onSave={filterManagement.handleSaveNewFilter}
+        isDarkMode={isDarkMode}
+        mode="create"
+        filterPreview={getFilterPreview}
+      />
+
+      {/* Filter Name Dialog for Renaming Filters */}
+      <FilterNameDialog
+        open={!!filterManagement.renameDialogFilter}
+        onClose={() => filterManagement.setRenameDialogFilter(null)}
+        onSave={(name) => filterManagement.handleSaveRename(name)}
+        isDarkMode={isDarkMode}
+        mode="rename"
+        currentName={filterManagement.renameDialogFilter?.name || ""}
+      />
+
+      {/* Filter Details Dialog */}
+      <FilterDetailsDialog
+        open={filterManagement.filterDetailsDialogOpen}
+        onClose={() => {
+          filterManagement.setFilterDetailsDialogOpen(false);
+          filterManagement.setSelectedFilterForDetails(null);
+        }}
+        onApply={filterManagement.handleApplyFilterFromDetails}
+        isDarkMode={isDarkMode}
+        filter={filterManagement.selectedFilterForDetails}
+      />
+
+      {/* Documents Management Dialog */}
+      {enableDocumentManagement && (
+      <DocumentManagementDialog
+        open={documentDialog.docsDialogOpen}
+        onClose={documentDialog.handleCloseDocsDialog}
+        onDocumentSelect={documentDialog.handleDocumentSelectFromDialog}
+        onDocumentRemove={documentDialog.handleDocumentRemoveFromDialog}
+        initialTab="manage"
+        selectionMode={true}
+        maxSelection={FILE_UPLOAD_CONFIG.MAX_FILE_COUNT}
+        title={t("files.documentManagement")}
+        attachedFiles={fileHandling.attachedFiles}
+      />
+      )}
+
+      {/* File Limit Warning Snackbar */}
+      <Snackbar
+        open={documentDialog.showLimitWarning}
+        autoHideDuration={3000}
+        onClose={documentDialog.closeLimitWarning}
+        message={t("files.maxFilesLimit", { count: 10 })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      />
+
+      {/* File Error Snackbar */}
+      <Snackbar
+        open={fileHandling.showFileError}
+        autoHideDuration={4000}
+        onClose={fileHandling.clearFileError}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={fileHandling.clearFileError}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
+          {fileHandling.fileError}
+        </Alert>
+      </Snackbar>
+    </>
+  );
+}

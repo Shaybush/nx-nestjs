@@ -1,0 +1,52 @@
+import { StrictMode } from 'react';
+import { BrowserRouter } from 'react-router-dom';
+import * as ReactDOM from 'react-dom/client';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import App from './app/app';
+import { TranslationProvider } from './contexts/TranslationContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { queryClient } from './lib/queryClient';
+import { enablePersistence } from './lib/persist';
+import { setupGlobalErrorHandling } from './utils/errorHandling.js';
+import './styles.css';
+
+setupGlobalErrorHandling();
+
+const restoreDirection = () => {
+  const storedDirection = localStorage.getItem('preferred_direction');
+  const storedLang = localStorage.getItem('preferred_language');
+  
+  if (storedDirection && storedLang) {
+    document.documentElement.dir = storedDirection;
+    document.documentElement.lang = storedLang;
+  }
+};
+
+restoreDirection();
+
+enablePersistence();
+
+const root = ReactDOM.createRoot(
+  document.getElementById('root') as HTMLElement
+);
+
+
+root.render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <TranslationProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AuthProvider>
+      </TranslationProvider>
+      {import.meta.env.MODE !== 'production' && (
+        <ReactQueryDevtools 
+          initialIsOpen={false}
+        />
+      )}
+    </QueryClientProvider>
+  </StrictMode>
+);
